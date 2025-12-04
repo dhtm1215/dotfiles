@@ -1,0 +1,20 @@
+[user]
+	name = dhtm1215
+	email = dhtm1215@gmail.com
+[core]
+    pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true    # n/N으로 변경사항 점프 가능
+    light = false      # 다크모드
+    side-by-side = true # ★ 이게 개꿀 (좌우로 비교해서 보여줌)
+    line-numbers = true
+[merge]
+    conflictstyle = diff3
+
+[diff]
+    colorMoved = default
+		
