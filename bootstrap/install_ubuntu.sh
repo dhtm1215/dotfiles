@@ -10,7 +10,7 @@ log() { printf "\n[bootstrap] %s\n" "$*"; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ZSH_SRC_DIR="${SCRIPT_DIR}/zsh" # 너 말대로: bootstrap / zsh / install_ubuntu.sh가 같은 위계
+ZSH_SRC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)/zsh"
 ZSH_DST_DIR="${HOME}/.config/zsh"
 
 if [ ! -d "$ZSH_SRC_DIR" ]; then
