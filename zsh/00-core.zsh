@@ -1,3 +1,5 @@
+setopt interactivecomments
+
 # ~/.config/zsh/00-core.zsh
 
 # helper
