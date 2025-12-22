@@ -1,0 +1,13 @@
+# dotfiles/zsh/zshrc  (이걸 ~/.zshrc로 symlink)
+export ZDOTDIR="$HOME"  # 혹시 꼬였을 때 방어
+
+ZSH_CONFIG_DIR="$HOME/.config/zsh"
+
+# 공통 로딩
+for f in 00-core.zsh 10-p10k-ohmyzsh.zsh 20-aliases-tools.zsh 30-fzf.zsh; do
+  [[ -f "$ZSH_CONFIG_DIR/$f" ]] && source "$ZSH_CONFIG_DIR/$f"
+done
+
+# OS별 로딩
+os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+[[ -f "$ZSH_CONFIG_DIR/os/$os.zsh" ]] && source "$ZSH_CONFIG_DIR/os/$os.zsh"
