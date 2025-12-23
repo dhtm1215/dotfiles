@@ -1,102 +1,150 @@
-# ~/dotfiles/bootstrap/install_macos.sh 로 "통으로 덮어쓰기"
-# (보이지 않는 제어문자 섞이는 문제 방지용으로 cat heredoc 방식 추천)
-
-mkdir -p ~/dotfiles/bootstrap
-
-cat >~/dotfiles/bootstrap/install_macos.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-log() { printf "\n[install_macos] %s\n" "$*"; }
-has() { command -v "$1" >/dev/null 2>&1; }
-
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
-ZSH_DIR="$DOTFILES_ROOT/zsh"
-
-if [[ ! -d "$ZSH_DIR" ]]; then
-  echo "ERROR: expected $ZSH_DIR to exist (dotfiles/zsh 폴더가 필요함)"
-  exit 1
+# sh로 실행했을 때 bash 기능([[, BASH_SOURCE 등) 깨지는 것 방지
+if [ -z "${BASH_VERSION:-}" ]; then
+  exec /usr/bin/env bash "$0" "$@"
 fi
 
-log "Homebrew 확인/설치"
-if ! has brew; then
-  log "brew 없음 -> 설치"
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-fi
+log() { printf "\n[bootstrap] %s\n" "$*"; }
+have() { command -v "$1" >/dev/null 2>&1; }
 
-# Apple Silicon 기본 brew 경로 보정
-if [[ -d /opt/homebrew/bin ]]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-log "brew 업데이트"
-brew update
+# repo 구조(너가 올린 install_ubuntu.sh 기준) 맞춰서 경로 잡음
+ZSH_SRC_DIR="${REPO_ROOT}/zsh"
+NVIM_SRC_DIR="${REPO_ROOT}/nvim"
+TMUX_SRC_FILE="${REPO_ROOT}/tmux.conf"    # 없으면 자동 스킵
+GITCONF_SRC_FILE="${REPO_ROOT}/gitconfig" # 없으면 자동 스킵
 
-log "필수 패키지 설치"
-brew install \
-  git curl ca-certificates \
-  zsh tmux \
-  fzf ripgrep fd \
-  jq \
-  bat eza \
-  gh lazygit \
-  yazi \
-  neovim
+# 설치/배치 위치
+ZSH_DST_DIR="${HOME}/.config/zsh"
+NVIM_DST_DIR="${HOME}/.config/nvim"
+TMUX_DST_FILE="${HOME}/.tmux.conf"
+GITCONF_DST_FILE="${HOME}/.gitconfig"
 
-log "fzf keybindings/completion 설치(맥)"
-# brew fzf는 install 스크립트를 따로 실행해야 ~/.fzf.zsh가 생기는 경우가 많음
-"$(brew --prefix)/opt/fzf/install" --all --no-bash --no-fish || true
+# backup 유틸
+backup_if_exists() {
+  local target="$1"
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    local ts
+    ts="$(date +"%Y%m%d_%H%M%S")"
+    mv "$target" "${target}.bak.${ts}"
+    log "backup: $target -> ${target}.bak.${ts}"
+  fi
+}
 
-log "dotfiles 옵션 A 적용 (~/.config/zsh -> dotfiles/zsh, ~/.zshrc -> 로더)"
-mkdir -p "$HOME/.config"
-ts="$(date +%Y%m%d_%H%M%S)"
+ensure_dir() {
+  local d="$1"
+  mkdir -p "$d"
+}
 
-if [[ -e "$HOME/.config/zsh" && ! -L "$HOME/.config/zsh" ]]; then
-  mv "$HOME/.config/zsh" "$HOME/.config/zsh.bak.$ts"
-fi
+symlink_dir() {
+  local src="$1"
+  local dst="$2"
+  if [ ! -d "$src" ]; then
+    log "skip (missing dir): $src"
+    return 0
+  fi
+  backup_if_exists "$dst"
+  ensure_dir "$(dirname "$dst")"
+  ln -snf "$src" "$dst"
+  log "link: $dst -> $src"
+}
 
-if [[ -e "$HOME/.zshrc" && ! -L "$HOME/.zshrc" ]]; then
-  cp -a "$HOME/.zshrc" "$HOME/.zshrc.bak.$ts" || true
-fi
+symlink_file() {
+  local src="$1"
+  local dst="$2"
+  if [ ! -f "$src" ]; then
+    log "skip (missing file): $src"
+    return 0
+  fi
+  backup_if_exists "$dst"
+  ln -snf "$src" "$dst"
+  log "link: $dst -> $src"
+}
 
-ln -sfn "$ZSH_DIR" "$HOME/.config/zsh"
-ln -sfn "$HOME/.config/zsh/zshrc" "$HOME/.zshrc"
+# brew 설치(없으면 안내만)
+install_brew_if_needed() {
+  if have brew; then
+    return 0
+  fi
+  log "Homebrew가 없음. 아래 중 하나를 선택해라:"
+  log "1) 직접 설치 후 다시 실행"
+  log '   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+  log "2) brew 없이 링크만 걸고 끝내도 됨(설치는 너가 수동으로)"
+}
 
-log "oh-my-zsh 설치(없으면)"
-if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
-  RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-fi
+brew_bundle() {
+  if ! have brew; then
+    return 0
+  fi
 
-log "p10k + zsh plugins 설치"
-mkdir -p "$HOME/.oh-my-zsh/custom/themes" "$HOME/.oh-my-zsh/custom/plugins"
+  log "brew update"
+  brew update
 
-[[ -d "$HOME/.oh-my-zsh/custom/themes/powerlevel10k" ]] || \
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
-    "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+  # 너 워크플로우 기준으로 실사용 큰 것만(없어도 되는 건 설치 실패해도 진행)
+  local pkgs=(
+    git
+    neovim
+    tmux
+    zsh
+    fzf
+    ripgrep
+    fd
+    eza
+    bat
+    yazi
+  )
 
-[[ -d "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]] || \
-  git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions \
-    "$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+  log "brew install packages"
+  for p in "${pkgs[@]}"; do
+    if brew list "$p" >/dev/null 2>&1; then
+      log "already: $p"
+    else
+      brew install "$p" || log "warn: failed to install $p (continue)"
+    fi
+  done
 
-[[ -d "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]] || \
-  git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git \
-    "$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+  # fzf install (키바인딩/완성)
+  if have "$(brew --prefix)/opt/fzf/install"; then
+    log "fzf post-install (no changes if already done)"
+    "$(brew --prefix)/opt/fzf/install" --key-bindings --completion --no-update-rc >/dev/null 2>&1 || true
+  fi
+}
 
-log "LazyVim starter 설치 (기존 nvim 설정 백업 후)"
-mkdir -p "$HOME/.config"
-if [[ -d "$HOME/.config/nvim" ]]; then
-  mv "$HOME/.config/nvim" "$HOME/.config/nvim.bak.$ts" || true
-fi
-if [[ -d "$HOME/.local/share/nvim" ]]; then
-  mv "$HOME/.local/share/nvim" "$HOME/.local/share/nvim.bak.$ts" || true
-fi
+main() {
+  log "repo root: $REPO_ROOT"
 
-git clone https://github.com/LazyVim/starter "$HOME/.config/nvim"
+  # 0) brew 준비/설치
+  install_brew_if_needed
+  brew_bundle
 
-log "완료"
-log "다음: 새 터미널 열거나 'exec zsh'"
-log "체크: nvim --version ; lazygit --version ; gh --version ; jq --version ; yazi --version"
-EOF
+  # 1) config 디렉토리 기본 생성
+  ensure_dir "${HOME}/.config"
 
-chmod +x ~/dotfiles/bootstrap/install_macos.sh
+  # 2) zsh / nvim 링크
+  symlink_dir "$ZSH_SRC_DIR" "$ZSH_DST_DIR"
+  symlink_dir "$NVIM_SRC_DIR" "$NVIM_DST_DIR"
+
+  # 3) tmux / gitconfig (있으면)
+  symlink_file "$TMUX_SRC_FILE" "$TMUX_DST_FILE"
+  symlink_file "$GITCONF_SRC_FILE" "$GITCONF_DST_FILE"
+
+  # 4) zsh 기본 셸 설정(실패해도 진행)
+  if have chsh && have zsh; then
+    if [ "${SHELL:-}" != "$(command -v zsh)" ]; then
+      log "set default shell to zsh (password may be required)"
+      chsh -s "$(command -v zsh)" || log "warn: chsh failed (continue)"
+    fi
+  fi
+
+  log "done"
+  log "다음:"
+  log "  1) 새 터미널 열거나: exec zsh"
+  log "  2) tmux 쓰는 중이면: tmux source-file ~/.tmux.conf"
+  log "  3) nvim 첫 실행하면 플러그인 자동 설치 뜰 수 있음"
+}
+
+main "$@"
