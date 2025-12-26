@@ -126,10 +126,54 @@ ensure_tools() {
   log "기본 패키지 설치 (apt)"
   apt_install git curl unzip tar gzip zsh tmux \
     fzf ripgrep fd-find jq bat eza \
-    gh lazygit
+    gh
 
   log "yazi 설치 (snap)"
   snap_install yazi --classic
+}
+
+# 1) install_ubuntu.sh에 아래 함수 추가 (helper 함수들 있는 구간에 붙여넣기)
+
+install_lazygit_latest() {
+  log "lazygit 설치 (GitHub 최신 릴리즈 바이너리)"
+
+  # snap으로 깔린 구버전 lazygit 제거(권한/버전 이슈 방지)
+  if command -v snap >/dev/null 2>&1; then
+    if snap list 2>/dev/null | awk '{print $1}' | grep -qx lazygit; then
+      sudo snap remove lazygit || true
+    fi
+  fi
+
+  local arch tarch ver url
+  arch="$(uname -m)"
+  case "$arch" in
+  x86_64) tarch="Linux_x86_64" ;;
+  aarch64 | arm64) tarch="Linux_arm64" ;;
+  *)
+    log "지원 안 되는 아키텍처: $arch -> lazygit 설치 스킵"
+    return 0
+    ;;
+  esac
+
+  ver="$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
+    grep -m1 '"tag_name"' | cut -d'"' -f4)"
+
+  if [ -z "$ver" ]; then
+    echo "[ERR] lazygit 최신 버전 태그를 못 가져옴"
+    return 1
+  fi
+
+  url="https://github.com/jesseduffield/lazygit/releases/download/${ver}/lazygit_${ver#v}_${tarch}.tar.gz"
+
+  (
+    cd /tmp &&
+      rm -f lazygit.tar.gz lazygit &&
+      curl -fLSo lazygit.tar.gz "$url" &&
+      tar xf lazygit.tar.gz lazygit &&
+      sudo install -m 0755 lazygit /usr/local/bin/lazygit
+  )
+
+  lazygit --version || true
 }
 
 ensure_lazyvim_starter() {
@@ -160,6 +204,7 @@ main() {
   ensure_p10k_and_plugins
   ensure_neovim_for_lazyvim
   ensure_lazyvim_starter
+  install_lazygit_latest
 
   log "완료. 새 터미널 열거나 아래 실행"
   echo "exec zsh"
