@@ -194,6 +194,27 @@ ensure_lazyvim_starter() {
   fi
 }
 
+ensure_fd_command() {
+  # zsh alias 말고, 실제 실행파일 fd가 존재해야 (eval/sh에서도) 안 터짐
+  if command -v fd >/dev/null 2>&1; then
+    return 0
+  fi
+
+  # ubuntu: 패키지명 fd-find, 바이너리명 fdfind인 경우가 흔함
+  if command -v fdfind >/dev/null 2>&1; then
+    sudo ln -sfn "$(command -v fdfind)" /usr/local/bin/fd
+    return 0
+  fi
+
+  # 혹시 환경에 따라 fd-find로 들어오는 경우까지 방어
+  if command -v fd-find >/dev/null 2>&1; then
+    sudo ln -sfn "$(command -v fd-find)" /usr/local/bin/fd
+    return 0
+  fi
+
+  echo "[bootstrap][WARN] fd/fdfind 없음: 먼저 fd-find 패키지 설치 필요"
+}
+
 main() {
   log "시작: $(whoami) / $(hostname)"
   log "repo: $SCRIPT_DIR"
@@ -205,6 +226,7 @@ main() {
   ensure_neovim_for_lazyvim
   ensure_lazyvim_starter
   install_lazygit_latest
+  ensure_fd_command
 
   log "완료. 새 터미널 열거나 아래 실행"
   echo "exec zsh"
