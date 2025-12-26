@@ -132,46 +132,49 @@ ensure_tools() {
   snap_install yazi --classic
 }
 
-# 1) install_ubuntu.sh에 아래 함수 추가 (helper 함수들 있는 구간에 붙여넣기)
-
 install_lazygit_latest() {
-  log "lazygit 설치 (GitHub 최신 릴리즈 바이너리)"
+  log "lazygit 설치 (GitHub latest redirect 기반, API/jq/grep 없음)"
 
-  # snap으로 깔린 구버전 lazygit 제거(권한/버전 이슈 방지)
+  # snap 구버전 있으면 제거
   if command -v snap >/dev/null 2>&1; then
     if snap list 2>/dev/null | awk '{print $1}' | grep -qx lazygit; then
       sudo snap remove lazygit || true
     fi
   fi
 
-  local arch tarch ver url
+  local arch tarch ver url workdir
   arch="$(uname -m)"
   case "$arch" in
   x86_64) tarch="Linux_x86_64" ;;
   aarch64 | arm64) tarch="Linux_arm64" ;;
   *)
-    log "지원 안 되는 아키텍처: $arch -> lazygit 설치 스킵"
+    log "지원 안 되는 아키텍처: $arch -> skip"
     return 0
     ;;
   esac
 
-  ver="$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest |
-    grep -m1 '"tag_name"' | cut -d'"' -f4)"
+  # GitHub latest는 태그로 리다이렉트됨 -> 최종 URL에서 vX.Y.Z만 뽑음
+  ver="$(
+    curl -fsSL -o /dev/null -w '%{url_effective}' \
+      https://github.com/jesseduffield/lazygit/releases/latest |
+      awk -F/ '{print $NF}'
+  )"
 
   if [ -z "$ver" ]; then
-    echo "[ERR] lazygit 최신 버전 태그를 못 가져옴"
+    echo "[ERR] lazygit 버전 태그를 못 가져옴"
     return 1
   fi
 
   url="https://github.com/jesseduffield/lazygit/releases/download/${ver}/lazygit_${ver#v}_${tarch}.tar.gz"
 
-  (
-    cd /tmp &&
-      rm -f lazygit.tar.gz lazygit &&
-      curl -fLSo lazygit.tar.gz "$url" &&
-      tar xf lazygit.tar.gz lazygit &&
-      sudo install -m 0755 lazygit /usr/local/bin/lazygit
-  )
+  workdir="$HOME/.cache/lazygit-install"
+  mkdir -p "$workdir"
+  rm -f "$workdir/lazygit.tgz" "$workdir/lazygit"
+
+  curl -fLSo "$workdir/lazygit.tgz" "$url"
+  tar -tzf "$workdir/lazygit.tgz" >/dev/null
+  tar -xzf "$workdir/lazygit.tgz" -C "$workdir" lazygit
+  sudo install -m 0755 "$workdir/lazygit" /usr/local/bin/lazygit
 
   lazygit --version || true
 }
