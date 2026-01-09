@@ -11,3 +11,4 @@ done
 # OS별 로딩
 os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 [[ -f "$ZSH_CONFIG_DIR/os/$os.zsh" ]] && source "$ZSH_CONFIG_DIR/os/$os.zsh"
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
