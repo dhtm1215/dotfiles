@@ -1,9 +1,12 @@
--- nvim/lua/plugins/avante.lua
 return {
-    "2KAbhishek/avante.nvim",
-    config = function()
-        require("avante").setup({
-            -- 이 곳에 avante.nvim 관련 설정을 추가합니다.
-        })
-    end,
+  "yetone/avante.nvim",
+  config = function()
+    require("avante").setup({
+      provider = "gemini",
+      gemini = {
+        api_key = os.getenv("GEMINI_API_KEY"),
+        model = "gemini-2.5-flash-lite",
+      },
+    })
+  end,
 }

@@ -29,3 +29,4 @@ fi
 
 # GCP(필요하면 유지. 싫으면 .zshrc.local로 빼)
 export GOOGLE_CLOUD_PROJECT="norse-ego-458401-k7"
+export GEMINI_API_KEY="AIzaSyCzrfBlBnoAsWJdVp0VBPIHt-VFPFBisdk"
