@@ -7,14 +7,18 @@ has fzf || return 0
 [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]] && source /usr/share/doc/fzf/examples/key-bindings.zsh
 [[ -f /usr/share/doc/fzf/examples/completion.zsh ]] && source /usr/share/doc/fzf/examples/completion.zsh
 
-# 2) keybindings/completion 로드 (mac/brew)
+# 2) keybindings/completion 로드 (arch/pacman)
+[[ -f /usr/share/fzf/key-bindings.zsh ]] && source /usr/share/fzf/key-bindings.zsh
+[[ -f /usr/share/fzf/completion.zsh ]] && source /usr/share/fzf/completion.zsh
+
+# 3) keybindings/completion 로드 (mac/brew)
 if has brew; then
   bp="$(brew --prefix 2>/dev/null)"
   [[ -f "$bp/opt/fzf/shell/key-bindings.zsh" ]] && source "$bp/opt/fzf/shell/key-bindings.zsh"
   [[ -f "$bp/opt/fzf/shell/completion.zsh" ]] && source "$bp/opt/fzf/shell/completion.zsh"
 fi
 
-# 3) ~/.fzf.zsh (git 설치 or brew 설치 시 생성될 수도 있음)
+# 4) ~/.fzf.zsh (git 설치 or brew 설치 시 생성될 수도 있음)
 [[ -f "$HOME/.fzf.zsh" ]] && source "$HOME/.fzf.zsh"
 
 # 4) 검색 커맨드 (fd/fdfind/fallback)
