@@ -109,13 +109,34 @@ ensure_neovim_for_lazyvim() {
 
 ensure_tools() {
   log "기본 패키지 설치 (pacman)"
-  local gh_pkg="gh"
-  if ! pacman -Si gh >/dev/null 2>&1; then
+  local -a packages
+  local -a optional
+  local gh_pkg=""
+
+  packages=(git curl unzip tar gzip zsh tmux fzf ripgrep fd jq bat eza)
+  optional=(yazi lazygit)
+
+  if pacman -Si gh >/dev/null 2>&1; then
+    gh_pkg="gh"
+  elif pacman -Si github-cli >/dev/null 2>&1; then
     gh_pkg="github-cli"
+  else
+    log "WARN: gh/github-cli 패키지를 찾지 못해서 스킵"
   fi
-  pacman_install git curl unzip tar gzip zsh tmux \
-    fzf ripgrep fd jq bat eza \
-    "$gh_pkg" yazi lazygit
+
+  if [ -n "$gh_pkg" ]; then
+    packages+=("$gh_pkg")
+  fi
+
+  for pkg in "${optional[@]}"; do
+    if pacman -Si "$pkg" >/dev/null 2>&1; then
+      packages+=("$pkg")
+    else
+      log "WARN: 패키지 없음 - $pkg (스킵)"
+    fi
+  done
+
+  pacman_install "${packages[@]}"
 }
 
 ensure_lazyvim_starter() {
