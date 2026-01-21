@@ -132,6 +132,20 @@ ensure_lazyvim_starter() {
   fi
 }
 
+ensure_keyboard_mapping() {
+  log "키보드 매핑: Win 키보드 -> Mac 배치 (Ctrl<->Win)"
+
+  if have localectl; then
+    sudo localectl set-x11-keymap us pc105 "" "ctrl:swap_lwin_lctl,ctrl:swap_rwin_rctl"
+  else
+    echo "[WARN] localectl 없음: X11 키맵 설정을 건너뜀"
+  fi
+
+  if have setxkbmap; then
+    setxkbmap -option "ctrl:swap_lwin_lctl,ctrl:swap_rwin_rctl" || true
+  fi
+}
+
 main() {
   log "시작: $(whoami) / $(hostname)"
   log "repo: $SCRIPT_DIR"
@@ -142,6 +156,7 @@ main() {
   ensure_p10k_and_plugins
   ensure_neovim_for_lazyvim
   ensure_lazyvim_starter
+  ensure_keyboard_mapping
 
   log "완료. 새 터미널 열거나 아래 실행"
   echo "exec zsh"
