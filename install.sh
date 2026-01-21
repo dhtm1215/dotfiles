@@ -18,12 +18,18 @@ elif [[ "$OS" == "Linux" ]]; then
     . /etc/os-release
   fi
 
-  if [[ "${ID:-}" == "arch" || "${ID:-}" == "nyarch" || "${ID_LIKE:-}" == *"arch"* ]]; then
+  if [[ "${ID:-}" == "nyarch" ]]; then
     sudo pacman -Syu --noconfirm
     sudo pacman -S --noconfirm git curl
     sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
     export PATH="$HOME/.local/bin:$PATH"
     ./bootstrap/install_nyarch.sh || true
+  elif [[ "${ID:-}" == "arch" || "${ID_LIKE:-}" == *"arch"* ]]; then
+    sudo pacman -Syu --noconfirm
+    sudo pacman -S --noconfirm git curl
+    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
+    export PATH="$HOME/.local/bin:$PATH"
+    ./bootstrap/install_arch.sh || true
   else
     sudo apt update
     sudo apt install -y git curl
