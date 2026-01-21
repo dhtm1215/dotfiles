@@ -109,9 +109,13 @@ ensure_neovim_for_lazyvim() {
 
 ensure_tools() {
   log "기본 패키지 설치 (pacman)"
+  local gh_pkg="gh"
+  if ! pacman -Si gh >/dev/null 2>&1; then
+    gh_pkg="github-cli"
+  fi
   pacman_install git curl unzip tar gzip zsh tmux \
     fzf ripgrep fd jq bat eza \
-    gh yazi lazygit
+    "$gh_pkg" yazi lazygit
 }
 
 ensure_lazyvim_starter() {
@@ -147,7 +151,15 @@ ensure_keyboard_mapping() {
 }
 
 main() {
-  log "시작: $(whoami) / $(hostname)"
+  local host
+  if have hostname; then
+    host="$(hostname)"
+  elif [ -f /etc/hostname ]; then
+    host="$(cat /etc/hostname)"
+  else
+    host="unknown"
+  fi
+  log "시작: $(whoami) / ${host}"
   log "repo: $SCRIPT_DIR"
 
   ensure_tools
