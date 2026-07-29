@@ -1,0 +1,12 @@
+.DS_Store
+*.bak.*
+.omo/
+iterm2/com.googlecode.iterm2.plist
+
+# Never track machine-local secrets.
+.ssh/
+.gnupg/
+secrets/
+*.pem
+*.key
+*.p12

@@ -4,7 +4,7 @@ export ZDOTDIR="$HOME"  # 혹시 꼬였을 때 방어
 ZSH_CONFIG_DIR="$HOME/.config/zsh"
 
 # 공통 로딩
-for f in 00-core.zsh 10-p10k-ohmyzsh.zsh 20-aliases-tools.zsh 30-fzf.zsh; do
+for f in 00-core.zsh 10-p10k-ohmyzsh.zsh 20-aliases-tools.zsh 30-fzf.zsh 40-starship.zsh; do
   [[ -f "$ZSH_CONFIG_DIR/$f" ]] && source "$ZSH_CONFIG_DIR/$f"
 done
 
@@ -14,5 +14,5 @@ os="$(uname -s | tr '[:upper:]' '[:lower:]')"
 export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
 
 # opencode
-export PATH=/Users/seomjae/.opencode/bin:$PATH
+export PATH="$HOME/.opencode/bin:$PATH"
 alias obsidian='/Applications/Obsidian.app/Contents/MacOS/Obsidian'
