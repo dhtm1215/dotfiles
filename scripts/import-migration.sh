@@ -2,14 +2,15 @@
 set -euo pipefail
 
 DRY_RUN=0
+SKIP_PACKAGES=0
 
 usage() {
   cat <<'EOF'
-Usage: ./scripts/import-migration.sh [--dry-run]
+Usage: ./scripts/import-migration.sh [--dry-run] [--skip-packages]
 
 Restores non-secret machine migration data tracked in this repo:
   - Brewfile packages and casks on macOS
-  - iTerm2 dynamic profiles
+  - iTerm2 dynamic profiles and appearance preferences
 
 Run ./install.sh first for shell, nvim, tmux, git, and starship symlinks.
 EOF
@@ -18,6 +19,7 @@ EOF
 while [ "$#" -gt 0 ]; do
   case "$1" in
   --dry-run) DRY_RUN=1 ;;
+  --skip-packages) SKIP_PACKAGES=1 ;;
   -h | --help)
     usage
     exit 0
@@ -74,7 +76,7 @@ backup_path() {
 
 restore_brewfile() {
   local brewfile="$ROOT/Brewfile"
-  if [ "$(uname -s)" != 'Darwin' ] || [ ! -f "$brewfile" ]; then
+  if [ "$SKIP_PACKAGES" -eq 1 ] || [ "$(uname -s)" != 'Darwin' ] || [ ! -f "$brewfile" ]; then
     log 'skip Brewfile restore'
     return 0
   fi
@@ -89,18 +91,28 @@ restore_brewfile() {
 }
 
 restore_iterm2() {
-  local src="$ROOT/iterm2/DynamicProfiles/dotfiles.json"
-  local dst="$HOME/Library/Application Support/iTerm2/DynamicProfiles/dotfiles.json"
+  local src_dir="$ROOT/iterm2/DynamicProfiles"
+  local dst_dir="$HOME/Library/Application Support/iTerm2/DynamicProfiles"
+  local src dst
 
-  if [ "$(uname -s)" != 'Darwin' ] || [ ! -f "$src" ]; then
+  if [ "$(uname -s)" != 'Darwin' ] || [ ! -d "$src_dir" ]; then
     log 'skip iTerm2 restore'
     return 0
   fi
 
-  run mkdir -p "$(dirname "$dst")"
-  backup_path "$dst"
-  run cp "$src" "$dst"
-  log 'iTerm2 dynamic profiles restored; restart iTerm2'
+  run mkdir -p "$dst_dir"
+  for src in "$src_dir"/*.json; do
+    [ -f "$src" ] || continue
+    dst="$dst_dir/$(basename "$src")"
+    backup_path "$dst"
+    run cp "$src" "$dst"
+  done
+
+  run defaults write com.googlecode.iterm2 TabStyleWithAutomaticOption -int 5
+  run defaults write com.googlecode.iterm2 TabViewType -int 0
+  run defaults write com.googlecode.iterm2 HideTab -bool false
+  run defaults write com.googlecode.iterm2 'Default Bookmark Guid' -string 'B450D62C-C781-4DBA-91DD-C721063BAF88'
+  log 'iTerm2 Catppuccin Mocha profile and Minimal appearance restored; restart iTerm2'
 }
 
 main() {

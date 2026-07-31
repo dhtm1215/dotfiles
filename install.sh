@@ -262,6 +262,7 @@ install_tmux_plugins() {
 link_dotfiles() {
   link_path "$SCRIPT_DIR/zsh" "$HOME/.config/zsh"
   link_path "$SCRIPT_DIR/zsh/zshrc" "$HOME/.zshrc"
+  link_path "$SCRIPT_DIR/p10k.zsh" "$HOME/.p10k.zsh"
   link_path "$SCRIPT_DIR/nvim" "$HOME/.config/nvim"
   link_path "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
   link_path "$SCRIPT_DIR/.gitconfig" "$HOME/.gitconfig"

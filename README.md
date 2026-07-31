@@ -28,13 +28,16 @@ exec zsh
 
 - `~/.config/zsh` -> `~/dotfiles/zsh`
 - `~/.zshrc` -> `~/dotfiles/zsh/zshrc`
+- `~/.p10k.zsh` -> `~/dotfiles/p10k.zsh`
 - `~/.config/nvim` -> `~/dotfiles/nvim`
 - `~/.tmux.conf` -> `~/dotfiles/tmux.conf`
 - `~/.gitconfig` -> `~/dotfiles/.gitconfig`
 - `~/.config/starship.toml` -> `~/dotfiles/starship.toml`
 - `~/.tmux/plugins/tpm` 및 tmux 플러그인
 - macOS Homebrew 패키지 목록: `Brewfile`
-- iTerm2 프로필: `iterm2/DynamicProfiles/dotfiles.json`
+- iTerm2 프로필: `iterm2/DynamicProfiles/*.json`
+  - 기본 프로필: Catppuccin Mocha, MesloLGS NF 12, ligatures/투명도/blur/status bar/toolbelt 끔
+  - 외형: Minimal, 탭 위쪽, 탭 하나일 때도 tab bar 표시
 
 기존 파일/디렉터리가 있으면 삭제하지 않고 `*.bak.YYYYMMDD_HHMMSS`로 백업한 뒤 링크한다.
 
@@ -51,7 +54,7 @@ git status --short
 생성/갱신되는 파일:
 
 - `Brewfile`: Homebrew formula, cask, tap 목록
-- `iterm2/DynamicProfiles/dotfiles.json`: iTerm2 프로필/키맵/색상 등 portable profile 설정
+- `iterm2/DynamicProfiles/*.json`: iTerm2 프로필/키맵/색상 등 portable profile 설정
 - `tmux.conf`: 현재 `~/.tmux.conf`가 repo symlink가 아니면 실제 사용 중인 tmux 설정
 
 `git diff`로 내용 확인 후 커밋/푸시하면 새 PC에서 그대로 받을 수 있다.
@@ -74,6 +77,9 @@ exec zsh
 ./install.sh --dry-run
 ./scripts/import-migration.sh --dry-run
 ```
+
+iTerm2가 실행 중이면 복원 후 한 번 재시작해야 기본 프로필과 외형 설정이 새 탭에 모두 반영된다.
+패키지는 건드리지 않고 iTerm2 프로필만 다시 적용하려면 `./scripts/import-migration.sh --skip-packages`를 사용한다.
 
 ## 수동으로 옮길 것
 
